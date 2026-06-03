@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SantIA Show - Control Interactivos</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <title>SantIA Show - Control Público</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: #0f0f16;
@@ -18,74 +16,118 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            overflow: hidden;
         }
-
         .card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 30px;
             border-radius: 20px;
             width: 100%;
-            max-width: 450px;
+            max-width: 420px;
             text-align: center;
             backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        h1 span {
-            color: #3b82f6;
-        }
-
-        p.subtitle {
-            color: #9ca3af;
-            font-size: 1rem;
-            margin-bottom: 25px;
-        }
-
-        /* 🔘 BOTONES INTERACTIVOS DEL SHOW */
-        .grid-botones {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
+        h1 { font-size: 1.8rem; margin-bottom: 5px; }
+        h1 span { color: #3b82f6; }
+        .subtitle { color: #9ca3af; font-size: 0.95rem; margin-bottom: 25px; }
+        
+        /* BOTONERA DE COLORES */
+        .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .btn-show {
-            padding: 20px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-            color: #ffffff;
+            padding: 20px; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            transition: transform 0.1s; color: #ffffff;
         }
-
-        .btn-show:active {
-            transform: scale(0.95);
-        }
-
+        .btn-show:active { transform: scale(0.95); }
         .btn-azul { background-color: #1d4ed8; }
         .btn-rojo { background-color: #dc2626; }
         .btn-verde { background-color: #16a34a; }
         .btn-amarillo { background-color: #ca8a04; color: #000000; }
 
-        /* SECCIÓN DEL BOMBO */
-        .bombo-box {
+        /* CONTENEDOR BOMBO (Oculto por defecto, el operador lo activa) */
+        #bombo-container {
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 25px;
-            margin-top: 10px;
+            padding-top: 25px; margin-top: 10px; display: none;
+        }
+        .btn-bombo {
+            width: 100%; padding: 25px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff; font-size: 1.4rem; font-weight: 900;
+            border: none; border-radius: 16px; cursor: pointer;
+            box-shadow: 0 6px 15px rgba(217, 119, 6, 0.3);
+            text-transform: uppercase; transition: transform 0.05s;
+        }
+        .btn-bombo:active { transform: scale(0.97); }
+
+        .status-bar { margin-top: 20px; font-size: 0.85rem; color: #34d399; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; background-color: #34d399; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>SantIA <span>Show</span></h1>
+        <p class="subtitle">Sincronizando tu pantalla con el escenario...</p>
+
+        <div class="grid-botones" id="panel-colores">
+            <button class="btn-show btn-azul" onclick="enviarColor('#0000ff')">Azul</button>
+            <button class="btn-show btn-rojo" onclick="enviarColor('#ff0000')">Rojo</button>
+            <button class="btn-show btn-verde" onclick="enviarColor('#00ff00')">Verde</button>
+            <button class="btn-show btn-amarillo" onclick="enviarColor('#ffff00')">Amarillo</button>
+        </div>
+
+        <div id="bombo-container">
+            <button class="btn-bombo" onclick="golpearBombo()">🥁 ¡TOCAR BOMBO!</button>
+        </div>
+
+        <div class="status-bar">
+            <div class="dot" id="con-dot"></div> <span id="con-text">Conectando al show...</span>
+        </div>
+    </div>
+
+    <!-- Carga segura de Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Inicialización forzada al dominio actual de Render
+        const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
+        const bomboContainer = document.getElementById('bombo-container');
+        const conDot = document.getElementById('con-dot');
+        const conText = document.getElementById('con-text');
+
+        socket.on('connect', () => {
+            conDot.style.backgroundColor = '#34d399';
+            conText.textContent = 'Conectado en Vivo';
+        });
+
+        socket.on('disconnect', () => {
+            conDot.style.backgroundColor = '#ef4444';
+            conText.textContent = 'Reconectando...';
+        });
+
+        // Escucha si el admin activa/desactiva el modo peña
+        socket.on('modoBomboServidor', (data) => {
+            if (data && data.estado) {
+                bomboContainer.style.display = 'block';
+            } else {
+                bomboContainer.style.display = 'none';
+            }
+        });
+
+        // Escucha cambios globales forzados por el micrófono o consola del admin
+        socket.on('cambiarColor', (data) => {
+            if (data && data.color && data.mode !== 'vumetro') {
+                document.body.style.backgroundColor = data.color;
+            }
+        });
+
+        function enviarColor(colorHex) {
+            socket.emit('cambiarColor', { color: colorHex, mode: 'manual' });
         }
 
-        .btn-bombo {
-            width: 100%;
-            padding: 25px;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: #ffffff;
-            font-size
+        function golpearBombo() {
+            socket.emit('registroGolpeLED');
+        }
+    </script>
+</body>
+</html>
