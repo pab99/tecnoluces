@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SantIA Show - Consola de Control Master</title>
+    <!-- Conexión nativa a Socket.io en la nube -->
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        /* HEADER ESTILO CABINA DE SONIDO */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1f2937;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        h1 { font-size: 2rem; font-weight: 800; }
+        h1 span { color: #3b82f6; }
+        
+        .live-counter {
+            background: rgba(52, 211, 153, 0.1);
+            color: #34d399;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dot { width: 10px; height: 10px; background-color: #34d399; border-radius: 50%; box-shadow: 0 0 10px #34d399; }
+
+        /* PANELES DE CONTROL */
+        .panel {
+            background-color: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        h2 { font-size: 1.1rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+
+        /* GRID DE BOTONES */
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .btn {
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #ffffff;
+            transition: all 0.15s;
+        }
+        .btn:active { transform: scale(0.96); }
+
+        /* COLORES PALETA */
+        .btn-azul { background-color: #2563eb; }
+        .btn-rojo { background-color: #dc2626; }
+        .btn-verde { background-color: #16a34a; }
+        .btn-amarillo { background-color: #eab308; color: #000000; }
+        .btn-magenta { background-color: #d946ef; }
+        .btn-cian { background-color: #06b6d4; }
+        .btn-blanco { background-color: #ffffff; color: #000000; }
+        .btn-apagado { background-color: #374151; }
+
+        /* VÚMETRO Y EFECTOS */
+        .btn-vumetro { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); border: 1px solid #6366f1; }
+        .btn-estrobo { background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%); border: 1px solid #9ca3af; }
+        
+        /* SWITCH ACTIVADO / DESACTIVADO */
+        .btn-toggle {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            border-radius: 12px;
+            border: 2px solid #4b5563;
+            background: #1f2937;
+            color: #ffffff;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-toggle.active {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            border-color: #f59e0b;
+            box-shadow: 0 0 20px rgba(217, 119, 6, 0.4);
+        }
+
+        /* AJUSTES DINÁMICOS */
+        .control-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 15px; }
+        .slider { flex-grow: 1; accent-color: #3b82f6; height: 8px; border-radius: 5px; cursor: pointer; }
+        
+        /* LINKS NAV */
+        .nav-links { display: flex; gap: 15px; }
+        .link-btn { background: transparent; border: 1px solid #374151; color: #9ca3af; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+        .link-btn:hover { background: #1f2937; color: #ffffff; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div>
+                <h1>Consola <span>Master</span></h1>
+                <p style="color: #6b7280; font-size: 0.9rem; margin-top: 2px;">Control unificado rítmico y lumínico en la nube</p>
+            </div>
+            <div class="live-counter">
+                <div class="dot"></div> DISPOSITIVOS: <span id="total-vivos">0</span>
+            </div>
+        </header>
+
+        <!-- SECCIÓN 1: PALETA DE COLORES FIJOS -->
+        <div class="panel">
+            <h2>Cambio de Color Manual (Audiencia y Escenario)</h2>
+            <div class="grid-4" style="margin-bottom: 15px;">
+                <button class="btn btn-azul" onclick="enviarComandoColor('azul')">Azul</button>
+                <button class="btn btn-rojo" onclick="enviarComandoColor('rojo')">Rojo</button>
+                <button class="btn btn-verde" onclick="enviarComandoColor('verde')">Verde</button>
+                <button class="btn btn-amarillo" onclick="enviarComandoColor('amarillo')">Amarillo</button>
+            </div>
+            <div class="grid-4">
+                <button class="btn btn-magenta" onclick="enviarComandoColor('magenta')">Magenta</button>
+                <button class="btn btn-cian" onclick="enviarComandoColor('cian')">Cian</button>
+                <button class="btn btn-blanco" onclick="enviarComandoColor('blanco')">Blanco Flash</button>
+                <button class="btn btn-apagado" onclick="enviarComandoColor('blackout')">Blackout (Apagar)</button>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: CONTROL DEL VÚMETRO DIGITAL -->
+        <div class="panel">
+            <h2>Modo Vúmetro (Audio Rítmico Automático)</h2>
+            <div class="grid-2">
+                <button class="btn btn-vumetro" onclick="activarEfectoVumetro('vumetro-normal')">Iniciar Vúmetro RGB</button>
+                <button class="btn btn-estrobo" onclick="activarEfectoVumetro('estrobo-rapido')">Ráfaga Estroboscópica</button>
+            </div>
+            
+            <div class="control-row">
+                <label style="font-weight: 600; color: #9ca3af;">Sensibilidad del Micrófono:</label>
+                <input type="range" min="1" max="100" value="75" class="slider" id="sensibilidad" oninput="cambiarSensibilidad(this.value)">
+                <span id="val-sensibilidad" style="font-weight: 700; color: #3b82f6; width: 40px; text-align: right;">75%</span>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: MODOS DE INTERACTIVIDAD (BOMBO LEGÜERO) -->
+        <div class="panel">
+            <h2>Interactividad del Público</h2>
+            <button id="peña-toggle" class="btn-toggle" onclick="conmutarModoPeña()">Modo Peña / Bombo: Desactivado</button>
+        </div>
+
+        <!-- ACCESOS RÁPIDOS -->
+        <div class="nav-links">
+            <a href="/dashboard" class="btn-link link-btn" target="_blank">📊 Reporte de Métricas</a>
+            <a href="/pantalla.html" class="btn-link link-btn" target="_blank">🖥️ Pantalla Conectados Gigante</a>
+        </div>
+    </div>
+
+    <script>
+        // Al omitir los parámetros, se conecta de manera nativa al subdominio actual de Render
+        const socket = io();
+        let modoPeñaGlobal = false;
+
+        // Escucha en tiempo real de la audiencia conectada
+        socket.on('usuariosConectados', (total) => {
+            document.getElementById('total-vivos').textContent = total;
+        });
+
+        // Envía el evento de color o blackout a las pantallas de celulares y OBS
+        function enviarComandoColor(colorSeleccionado) {
+            socket.emit('cambiarColor', { tipo: 'fijo', color: colorSeleccionado });
+            console.log(`[Consola] Forzando color: ${colorSeleccionado}`);
+        }
+
+        // Envía comandos especiales para activar algoritmos de vúmetro o flash
+        function activarEfectoVumetro(tipoEfecto) {
+            socket.emit('cambiarColor', { tipo: 'dinamico', efecto: tipoEfecto });
+            console.log(`[Consola] Disparando efecto: ${tipoEfecto}`);
+        }
+
+        // Modifica la sensibilidad rítmica del captador general
+        function cambiarSensibilidad(valor) {
+            document.getElementById('val-sensibilidad').textContent = valor + '%';
+            socket.emit('cambiarColor', { tipo: 'config', sensibilidad: valor });
+        }
+
+        // Control maestro del modo peña folclórica (bombo virtual)
+        function conmutarModoPeña() {
+            modoPeñaGlobal = !modoPeñaGlobal;
+            const botonPeña = document.getElementById('peña-toggle');
+            
+            if (modoPeñaGlobal) {
+                botonPeña.textContent = "Modo Peña / Bombo: ¡ACTIVO!";
+                botonPeña.classList.add('active');
+                socket.emit('modoBomboServidor', { estado: true });
+            } else {
+                botonPeña.textContent = "Modo Peña / Bombo: Desactivado";
+                botonPeña.classList.remove('active');
+                socket.emit('modoBomboServidor', { estado: false });
+            }
+        }
+    </script>
+</body>
+</html>

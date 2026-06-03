@@ -1,0 +1,372 @@
+<!DOCTYPE html><html lang="es"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SantIA Stagelights - Panel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #0d0d13; color: #ffffff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; position: relative; overflow-y: auto; }
+
+        #audience-counter { position: fixed; top: 15px; left: 15px; background-color: #000000; border: 3px solid #00ff00; color: #00ff00; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; z-index: 9999; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4); font-family: monospace; }
+        #bg-flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000000; z-index: 1; transition: background-color 0.15s ease-out; pointer-events: none; }
+        #vumetro-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: none; background-color: #0d0d13; padding: 30px; align-items: flex-end; justify-content: center; gap: 8px; }
+        .vumetro-bar-wrapper { flex: 1; height: 85%; background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; display: flex; align-items: flex-end; overflow: hidden; }
+        .vumetro-bar { width: 100%; height: 0%; background: linear-gradient(to top, #00ff00 0%, #ffff00 60%, #ff0000 100%); border-radius: 4px; transition: height 0.05s ease-out; }
+
+        .stage-container { text-align: center; width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center; z-index: 10; position: relative; }
+        .title-box { background-color: #ffffff; padding: 12px 35px; border-radius: 15px; margin-top: 50px; margin-bottom: 20px; box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); }
+        h1 { font-size: 2.4rem; letter-spacing: 1px; margin: 0; }
+        .sant { color: #000000; font-weight: normal; } .ia { font-weight: bold; } .i-red { color: #ff0000; font-weight: bold; font-style: italic; } .a-blue { color: #0000ff; } .stagelights { color: #000000; font-weight: normal; }
+        
+        .qr-section { display: flex; align-items: center; justify-content: center; gap: 30px; margin: 15px 0; }
+        .emoji-lateral { font-size: 5rem; display: inline-block; animation: bounce-emoji 2s infinite ease-in-out; }
+        @keyframes bounce-emoji { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .qr-container { background: #ffffff; padding: 15px; border-radius: 12px; box-shadow: 0 0 30px rgba(255, 255, 255, 0.2); }
+        #qrcode img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+        .qr-text { color: #ffffff; font-size: 1.3rem; margin-top: 10px; font-weight: bold; text-align: center; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); margin-bottom: 20px; }
+        
+        .controls { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 600px; margin-top: 10px; background: rgba(20, 20, 30, 0.8); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
+        .audio-switch { display: none; gap: 10px; justify-content: center; width: 100%; }
+        .switch-btn { padding: 12px 20px; border: 3px solid #ffffff; border-radius: 12px; font-size: 1.1rem; cursor: pointer; background-color: rgba(255, 255, 255, 0.1); font-weight: bold; color: #ffffff; flex: 1; }
+        .switch-btn.active { background-color: #00ff00; color: #000000; border-color: #00ff00; box-shadow: 0 0 20px #00ff00; }
+        
+        .mode-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; width: 100%; }
+        .mode-btn { padding: 15px 10px; border: 3px solid #ffffff; border-radius: 12px; font-size: 1.2rem; cursor: pointer; background-color: rgba(255, 255, 255, 0.1); font-weight: bold; color: #ffffff; text-align: center; }
+        .mode-btn.active { background-color: #00ff00; color: #000000; border-color: #00ff00; box-shadow: 0 0 30px #00ff00; }
+        
+        .color-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 12px; width: 100%; }
+        .color-btn { padding: 15px; border: 3px solid #ffffff; border-radius: 12px; font-size: 1.8rem; cursor: pointer; background-color: rgba(255, 255, 255, 0.1); }
+        .color-btn.multi-color { background: linear-gradient(135deg, #ff0000 0%, #ff0000 50%, #0000ff 50%, #0000ff 100%); }
+        .color-btn.argentina { background: linear-gradient(135deg, #00ffff 0%, #00ffff 50%, #0000ff 50%, #0000ff 100%); }
+        .color-btn.yellow-blink { animation: y-blink 0.5s infinite; background-color: #ffff00; }
+        @keyframes y-blink { 0%, 100% { transform: scale(1); } 50% { background-color: #000000; transform: scale(0.95); } }
+        
+        #status-audio { font-size: 1.2rem; color: #00ff00; margin-top: 10px; text-align: center; cursor: pointer; background-color: rgba(0, 0, 0, 0.7); padding: 12px; border-radius: 8px; border: 2px solid #00ff00; font-weight: bold; }
+        .frequency-bars { display: flex; gap: 3px; align-items: flex-end; justify-content: center; height: 50px; margin-top: 10px; }
+        .bar { width: 6px; background-color: #00ff00; border-radius: 3px; min-height: 4px; }
+        
+        #btn-bombo-toggle { width: 100%; padding: 15px; background-color: #4a3319; border: 3px solid #b59963; border-radius: 12px; color: #fff; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(181,153,99,0.3); margin-top: 5px; }
+    </style></head><body>
+    
+    <div id="audience-counter">👥 Conexiones: Realizando enlace...</div>
+    <div id="bg-flash"></div>
+    <div id="vumetro-container"></div>
+    
+    <div class="stage-container">
+        <div class="title-box">
+            <h1><span class="sant">Sant</span><span class="ia"><span class="i-red">I</span><span class="a-blue">A</span></span><span class="stagelights"> Stagelights</span></h1>
+        </div>
+
+        <div class="qr-section">
+            <div class="emoji-lateral">🎸</div>
+            <div class="qr-container"><div id="qrcode"></div></div>
+            <div class="emoji-lateral">🥁</div>
+        </div>
+        <div class="qr-text">Escanea el QR para ser parte de la Fiesta!<br>Subile el brillo de tu pantalla al máximo!!!!</div>
+        
+        <div class="controls">
+            <div class="audio-switch" id="audio-switch">
+                <button class="switch-btn active" data-audio-type="mic">🎤 Micrófono</button>
+                <button class="switch-btn" data-audio-type="system">🔊 Audio Chrome</button>
+            </div>
+            <div class="mode-buttons">
+                <button class="mode-btn" data-mode="audio">🎤 AUDIO</button>
+                <button class="mode-btn" data-mode="vumetro">📊 VÚMETRO</button>
+                <button class="mode-btn active" data-mode="manual">🎛️ MANUAL</button>
+            </div>
+            <div class="color-grid" id="color-grid">
+                <button class="color-btn" data-color="#ff0000">🔴</button>
+                <button class="color-btn" data-color="#00ff00">🟢</button>
+                <button class="color-btn" data-color="#0000ff">🔵</button>
+                <button class="color-btn" data-color="#ffff00">🟡</button>
+                <button class="color-btn" data-color="#ff00ff">💜</button>
+                <button class="color-btn" data-color="#00ffff">🩵</button>
+                <button class="color-btn multi-color" data-color="multi">🔴🔵</button>
+                <button class="color-btn argentina" data-color="argentina">🩵🔵</button>
+                <button class="color-btn yellow-blink" data-color="blink">⭐</button>
+            </div>
+            
+            <button id="btn-bombo-toggle">🥁 ACTIVAR MODO BOMBO / PEÑA</button>
+            
+            <div id="status-audio">🔴 CLIC AQUÍ PARA ACTIVAR CONSOLA</div>
+            <div class="frequency-bars" id="frequency-bars"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const audienceCounter = document.getElementById('audience-counter');
+
+        socket.on('connect', () => {
+            if (audienceCounter) audienceCounter.textContent = `👥 Celulares: 0`;
+        });
+
+        socket.on('usuariosConectados', (total) => {
+            // Descontamos 1 para no contarte a vos mismo (la consola admin) en el total del público
+            const clientesReales = Math.max(0, total - 1);
+            if (audienceCounter) audienceCounter.textContent = `👥 Celulares: ${clientesReales}`;
+        });
+
+        const bgFlash = document.getElementById('bg-flash');
+        const vumetroContainer = document.getElementById('vumetro-container');
+        const statusAudio = document.getElementById('status-audio');
+        const colorGrid = document.getElementById('color-grid');
+        const frequencyBars = document.getElementById('frequency-bars');
+        const audioSwitch = document.getElementById('audio-switch');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const switchButtons = document.querySelectorAll('.switch-btn');
+        const colorButtons = document.querySelectorAll('.color-btn');
+        const btnBomboToggle = document.getElementById('btn-bombo-toggle');
+
+        let audioContext, analyser, dataArray, currentStream;
+        let currentMode = 'manual'; 
+        let isListening = false, animationFrameId = null, currentBlinkInterval = null, modoBomboActivo = false;
+        let audioSource = 'mic'; 
+        
+        const pureColors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"];
+        let lastColorSent = "";
+        let lastExecutionTime = 0;
+        const SYNC_COOLDOWN = 65; 
+
+        function createFrequencyBars() {
+            frequencyBars.innerHTML = '';
+            for (let i = 0; i < 32; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                frequencyBars.appendChild(bar);
+            }
+        }
+
+        function createVumetroBars() {
+            vumetroContainer.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'vumetro-bar-wrapper';
+                const bar = document.createElement('div');
+                bar.className = 'vumetro-bar';
+                bar.id = `vubar-${i}`;
+                wrapper.appendChild(bar);
+                vumetroContainer.appendChild(wrapper);
+            }
+        }
+
+        function stopBlink() { if (currentBlinkInterval) { clearInterval(currentBlinkInterval); currentBlinkInterval = null; } }
+
+        function stopAudio() {
+            isListening = false;
+            if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+            if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
+            if (audioContext) { if (audioContext.state !== 'closed') audioContext.close(); audioContext = null; analyser = null; dataArray = null; }
+            // ADAPTADO: Usamos 'cambiarColor' para sincronizar el apagado
+            socket.emit('cambiarColor', { color: '#000000', mode: 'manual' });
+        }
+
+        switchButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                audioSource = btn.getAttribute('data-audio-type');
+                if (currentMode === 'audio' || currentMode === 'vumetro') startAudioInput();
+            });
+        });
+
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentMode = btn.getAttribute('data-mode');
+                modeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                stopBlink();
+
+                if (currentMode === 'audio') {
+                    colorGrid.style.display = 'none'; audioSwitch.style.display = 'flex'; vumetroContainer.style.display = 'none';
+                    startAudioInput();
+                } else if (currentMode === 'vumetro') {
+                    colorGrid.style.display = 'none'; audioSwitch.style.display = 'flex'; vumetroContainer.style.display = 'flex'; 
+                    createVumetroBars();
+                    startAudioInput();
+                } else {
+                    colorGrid.style.display = 'grid'; audioSwitch.style.display = 'none'; vumetroContainer.style.display = 'none';
+                    stopAudio();
+                    statusAudio.textContent = '🟡 Modo manual';
+                    bgFlash.style.backgroundColor = '#000000';
+                }
+            });
+        });
+
+        async function startAudioInput() {
+            try {
+                stopAudio();
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256; 
+                analyser.smoothingTimeConstant = 0.4; 
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                let mediaStream;
+                if (audioSource === 'mic') {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                } else {
+                    mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: true,
+                        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+                    });
+                }
+
+                const audioTracks = mediaStream.getAudioTracks();
+                if (audioTracks.length === 0) throw new Error("No se detectó pista de audio.");
+                currentStream = mediaStream;
+
+                const pureAudioStream = new MediaStream([audioTracks[0]]);
+                const source = audioContext.createMediaStreamSource(pureAudioStream);
+                source.connect(analyser);
+
+                isListening = true;
+                statusAudio.textContent = '🟢 Escuchando canal...';
+                createFrequencyBars();
+                if (currentMode === 'vumetro') createVumetroBars();
+                
+                processAudioLoop();
+            } catch (err) {
+                statusAudio.textContent = '❌ ' + err.message;
+                currentMode = 'manual';
+                colorGrid.style.display = 'grid'; audioSwitch.style.display = 'none'; vumetroContainer.style.display = 'none';
+            }
+        }
+
+        function processAudioLoop() {
+            if ((currentMode !== 'audio' && currentMode !== 'vumetro') || !isListening) return;
+
+            animationFrameId = requestAnimationFrame(processAudioLoop);
+            analyser.getByteFrequencyData(dataArray);
+
+            let totalVolume = 0;
+            for (let i = 0; i < dataArray.length; i++) { totalVolume += dataArray[i]; }
+            let avgVolume = totalVolume / dataArray.length;
+            statusAudio.textContent = `📊 Volumen de Entrada: ${Math.floor(avgVolume * 2.5)}`;
+
+            const bars = document.querySelectorAll('.bar');
+            bars.forEach((bar, i) => {
+                let val = dataArray[i] || 0;
+                bar.style.height = Math.min((val / 255) * 100, 100) + '%';
+            });
+
+            const now = Date.now();
+            if (now - lastExecutionTime < SYNC_COOLDOWN) return;
+            lastExecutionTime = now;
+
+            if (currentMode === 'vumetro') {
+                const totalBars = 16;
+                const chunk = Math.floor(dataArray.length / totalBars);
+                let vuHeights = [];
+                
+                for (let i = 0; i < totalBars; i++) {
+                    let sum = 0;
+                    for (let j = 0; j < chunk; j++) { sum += dataArray[(i * chunk) + j] || 0; }
+                    let heightPercent = Math.min(((sum / chunk) / 255) * 230, 100); 
+                    vuHeights.push(Math.floor(heightPercent));
+                    
+                    const vuBar = document.getElementById(`vubar-${i}`);
+                    if (vuBar) vuBar.style.height = heightPercent + '%';
+                }
+                // ADAPTADO: Cambiado a 'cambiarColor' para el vúmetro remoto
+                socket.emit('cambiarColor', { mode: 'vumetro', heights: vuHeights });
+
+            } else if (currentMode === 'audio') {
+                let chosenColor = "";
+
+                if (audioSource === 'system') {
+                    let maxVal = 0, maxIndex = 0;
+                    for (let i = 0; i < 32; i++) {
+                        if (dataArray[i] > maxVal) { maxVal = dataArray[i]; maxIndex = i; }
+                    }
+                    if (maxVal > 15) {
+                        if (maxIndex < 5) chosenColor = maxVal > 80 ? pureColors[0] : pureColors[3];
+                        else if (maxIndex < 16) chosenColor = maxVal > 70 ? pureColors[4] : pureColors[1];
+                        else chosenColor = maxVal > 60 ? pureColors[5] : pureColors[2];
+                    }
+                } else {
+                    let b_graves = 0, b_medios = 0, b_agudos = 0;
+                    for (let i = 0; i < 4; i++)  { b_graves += dataArray[i] || 0; }   
+                    for (let i = 4; i < 16; i++) { b_medios += dataArray[i] || 0; }   
+                    for (let i = 16; i < 32; i++){ b_agudos += dataArray[i] || 0; }   
+
+                    b_graves = b_graves / 4; b_medios = b_medios / 12; b_agudos = b_agudos / 16;
+
+                    if (b_graves > 15 && b_graves >= b_medios && b_graves >= b_agudos) {
+                        chosenColor = b_graves > 80 ? pureColors[0] : pureColors[3]; 
+                    } else if (b_medios > 15 && b_medios >= b_graves && b_medios >= b_agudos) {
+                        chosenColor = b_medios > 70 ? pureColors[4] : pureColors[1];
+                    } else if (b_agudos > 15) {
+                        chosenColor = b_agudos > 60 ? pureColors[5] : pureColors[2];
+                    }
+                }
+
+                if (chosenColor && chosenColor !== lastColorSent) {
+                    lastColorSent = chosenColor;
+                    bgFlash.style.backgroundColor = chosenColor;
+                    // ADAPTADO: Cambiado a 'cambiarColor' para el audio rítmico
+                    socket.emit('cambiarColor', { color: chosenColor, mode: 'audio' });
+                }
+            }
+        }
+
+        colorButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentMode !== 'manual' || modoBomboActivo) return;
+                stopBlink();
+                const colorValue = btn.getAttribute('data-color');
+                
+                if (colorValue === 'multi' || colorValue === 'argentina' || colorValue === 'blink') {
+                    let colors = []; let speed = 200;
+                    if (colorValue === 'multi') colors = ['#ff0000', '#0000ff'];
+                    else if (colorValue === 'argentina') colors = ['#00ffff', '#0000ff'];
+                    else if (colorValue === 'blink') { colors = ['#ffff00', '#000000']; speed = 90; } 
+                    
+                    let index = 0;
+                    bgFlash.style.backgroundColor = colors[0];
+                    // ADAPTADO: Cambiado a 'cambiarColor'
+                    socket.emit('cambiarColor', { color: colors[0], mode: 'manual' });
+                    
+                    currentBlinkInterval = setInterval(() => {
+                        index = (index + 1) % colors.length;
+                        bgFlash.style.backgroundColor = colors[index];
+                        // ADAPTADO: Cambiado a 'cambiarColor'
+                        socket.emit('cambiarColor', { color: colors[index], mode: 'manual' });
+                    }, speed);
+                } else {
+                    bgFlash.style.backgroundColor = colorValue;
+                    // ADAPTADO: Cambiado a 'cambiarColor'
+                    socket.emit('cambiarColor', { color: colorValue, mode: 'manual' });
+                }
+            });
+        });
+
+        btnBomboToggle.addEventListener('click', () => {
+            modoBomboActivo = !modoBomboActivo;
+            if (modoBomboActivo) {
+                stopBlink();
+                btnBomboToggle.textContent = "🛑 DESACTIVAR MODO BOMBO / PEÑA";
+                btnBomboToggle.style.backgroundColor = "#ff0055";
+                btnBomboToggle.style.borderColor = "#ffffff";
+                // ADAPTADO: Cambiado a 'modoBomboServidor' con la estructura del server nube
+                socket.emit('modoBomboServidor', { estado: true });
+            } else {
+                btnBomboToggle.textContent = "🥁 ACTIVAR MODO BOMBO / PEÑA";
+                btnBomboToggle.style.backgroundColor = "#4a3319";
+                btnBomboToggle.style.borderColor = "#b59963";
+                // ADAPTADO: Cambiado a 'modoBomboServidor' con la estructura del server nube
+                socket.emit('modoBomboServidor', { estado: false });
+            }
+        });
+
+        try {
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(document.getElementById("qrcode"), {
+                    text: window.location.origin, width: 280, height: 280, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+        } catch(e) { console.error(e); }
+        
+        createFrequencyBars();
+    </script></body></html>
