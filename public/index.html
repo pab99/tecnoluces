@@ -1,133 +1,224 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
+<!DOCTYPE html><html lang="es"><head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SantIA Show - Control Público</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
+    <title>SantIA Show - Público</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: #0f0f16;
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        body, html { 
+            width: 100%; height: 100%; 
+            overflow: hidden; 
+            font-family: system-ui, sans-serif; \n            background-color: #000000;
+            -webkit-user-select: none; user-select: none;
+        }
+        
+        #pantalla-color {
+            width: 100%; height: 100%;
+            background-color: #000000;
+            transition: background-color 0.1s ease-out;
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: space-between; 
+            padding: 25px 15px;
+            position: absolute; top: 0; left: 0; z-index: 1;
+        }
+
+        /* BRANDING ACTUALIZADO */
+        .brand-box {
+            background-color: #ffffff;
+            padding: 12px 25px; border-radius: 15px;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+            text-align: center; z-index: 50; width: 90%; max-width: 340px;
+        }
+        .brand-box h1 { font-size: 1.8rem; letter-spacing: 1px; margin: 0; color: #000000; }
+        .sant { color: #000000; font-weight: normal; } .ia { font-weight: bold; } .i-red { color: #ff0000; font-weight: bold; font-style: italic; } .a-blue { color: #0000ff; } .stagelights { color: #000000; font-weight: bold; }
+
+        /* AREA CENTRAL INTERACTIVA */
+        .centro-interactivo { 
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            width: 100%; 
+            z-index: 40; 
+            margin: 15px 0;
+            position: relative;
+            height: 65vh;
+        }
+
+        #btn-unirse {
+            padding: 18px 35px; font-size: 1.4rem; font-weight: bold; color: #00ff00;
+            background-color: #000000; border: 4px solid #00ff00; border-radius: 50px;
+            cursor: pointer; box-shadow: 0 0 25px rgba(0, 255, 0, 0.4);
+            text-transform: uppercase; letter-spacing: 1px;
+            animation: pulso-glow 1.5s infinite ease-in-out; z-index: 60;
+        }
+        @keyframes pulso-glow {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(0, 255, 0, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(0, 255, 0, 0.8); background-color: #001a00; }
+        }
+
+        /* VÚMETRO AGRANDADO AL 60% */
+        #celu-vumetro {
+            display: none; 
+            width: 100%;
+            height: 60vh; 
+            align-items: flex-end;
             justify-content: center;
-            padding: 20px;
+            gap: 5px;
+            padding: 0 5px;
+        }
+        .vubar-wrapper {
+            flex: 1;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            display: flex;
+            align-items: flex-end;
             overflow: hidden;
         }
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 20px;
+        .vubar-item {
             width: 100%;
-            max-width: 420px;
-            text-align: center;
-            backdrop-filter: blur(10px);
+            height: 0%; 
+            background: linear-gradient(to top, #00ff00 0%, #ffff00 70%, #ff0000 100%);
+            border-radius: 3px;
+            transition: height 0.04s ease-out;
         }
-        h1 { font-size: 1.8rem; margin-bottom: 5px; }
-        h1 span { color: #3b82f6; }
-        .subtitle { color: #9ca3af; font-size: 0.95rem; margin-bottom: 25px; }
+
+        /* CAPA INTERNA DEL BOMBO */
+        #capa-bombo { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .bombo-parche {
+            width: 55vw; height: 55vw; max-width: 200px; max-height: 200px;
+            background: radial-gradient(circle, #e0cda9 0%, #b59963 80%, #6e5427 100%);
+            border: 12px solid #4a3319; border-radius: 50%;
+            box-shadow: 0 0 25px rgba(181, 153, 99, 0.5), inset 0 0 15px rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center; font-size: 3.5rem; cursor: pointer;
+        }
+        .bombo-parche:active { transform: scale(0.92); }
+        .bombo-txt { font-size: 1.2rem; font-weight: bold; color: #00ff00; text-transform: uppercase; margin-top: 10px; text-shadow: 0 2px 4px #000; }
+
+        .instagram-wrapper { z-index: 50; width: 100%; text-align: center; }
+        .instagram-link {
+            color: #ffffff; text-decoration: none;
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            padding: 10px 22px; border-radius: 30px; font-weight: bold; font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(204, 35, 102, 0.4); display: inline-flex; align-items: center; gap: 8px;
+        }
+    </style></head><body>
+
+    <div id="pantalla-color">
+        <div class="brand-box">
+            <h1><span class="sant">Sant</span><span class="ia"><span class="i-red">I</span><span class="a-blue">A</span></span><span class="stagelights"> Show</span></h1>
+        </div>
         
-        /* BOTONERA DE COLORES */
-        .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .btn-show {
-            padding: 20px; border: none; border-radius: 12px;
-            font-size: 1rem; font-weight: 700; cursor: pointer;
-            transition: transform 0.1s; color: #ffffff;
-        }
-        .btn-show:active { transform: scale(0.95); }
-        .btn-azul { background-color: #1d4ed8; }
-        .btn-rojo { background-color: #dc2626; }
-        .btn-verde { background-color: #16a34a; }
-        .btn-amarillo { background-color: #ca8a04; color: #000000; }
+        <div class="centro-interactivo">
+            <button id="btn-unirse">Unirse al Show ✨</button>
+            <div id="celu-vumetro"></div>
 
-        /* CONTENEDOR BOMBO (Oculto por defecto, el operador lo activa) */
-        #bombo-container {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 25px; margin-top: 10px; display: none;
-        }
-        .btn-bombo {
-            width: 100%; padding: 25px;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: #ffffff; font-size: 1.4rem; font-weight: 900;
-            border: none; border-radius: 16px; cursor: pointer;
-            box-shadow: 0 6px 15px rgba(217, 119, 6, 0.3);
-            text-transform: uppercase; transition: transform 0.05s;
-        }
-        .btn-bombo:active { transform: scale(0.97); }
-
-        .status-bar { margin-top: 20px; font-size: 0.85rem; color: #34d399; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .dot { width: 8px; height: 8px; background-color: #34d399; border-radius: 50%; }
-    </style>
-</head>
-<body>
-
-    <div class="card">
-        <h1>SantIA <span>Show</span></h1>
-        <p class="subtitle">Sincronizando tu pantalla con el escenario...</p>
-
-        <div class="grid-botones" id="panel-colores">
-            <button class="btn-show btn-azul" onclick="enviarColor('#0000ff')">Azul</button>
-            <button class="btn-show btn-rojo" onclick="enviarColor('#ff0000')">Rojo</button>
-            <button class="btn-show btn-verde" onclick="enviarColor('#00ff00')">Verde</button>
-            <button class="btn-show btn-amarillo" onclick="enviarColor('#ffff00')">Amarillo</button>
+            <div id="capa-bombo">
+                <div class="bombo-parche" id="bombo-click">🥁</div>
+                <div class="bombo-txt">¡Modo Legüero!</div>
+            </div>
         </div>
-
-        <div id="bombo-container">
-            <button class="btn-bombo" onclick="golpearBombo()">🥁 ¡TOCAR BOMBO!</button>
-        </div>
-
-        <div class="status-bar">
-            <div class="dot" id="con-dot"></div> <span id="con-text">Conectando al show...</span>
+        
+        <div class="instagram-wrapper">
+            <a href="https://instagram.com/tu_usuario" target="_blank" class="instagram-link">
+                📸 Seguinos en Instagram
+            </a>
         </div>
     </div>
 
-    <!-- Carga segura de Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Inicialización forzada al dominio actual de Render
+        // Cambiado para conectar de forma segura a Render
         const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
-        const bomboContainer = document.getElementById('bombo-container');
-        const conDot = document.getElementById('con-dot');
-        const conText = document.getElementById('con-text');
+        const contenedorColor = document.getElementById('pantalla-color');
+        const celuVumetro = document.getElementById('celu-vumetro');
+        const capaBombo = document.getElementById('capa-bombo');
+        const bomboClick = document.getElementById('bombo-click');
+        const btnUnirse = document.getElementById('btn-unirse');
 
-        socket.on('connect', () => {
-            conDot.style.backgroundColor = '#34d399';
-            conText.textContent = 'Conectado en Vivo';
-        });
+        let modoBomboActivo = false;
+        let showIniciado = false;
+        const totalBarrasCelu = 12;
 
-        socket.on('disconnect', () => {
-            conDot.style.backgroundColor = '#ef4444';
-            conText.textContent = 'Reconectando...';
-        });
+        function inicializarBarrasCelu() {
+            celuVumetro.innerHTML = '';
+            for (let i = 0; i < totalBarrasCelu; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'vubar-wrapper';
+                const bar = document.createElement('div');
+                bar.className = 'vubar-item';
+                bar.id = `celu-vubar-${i}`;
+                wrapper.appendChild(bar);
+                celuVumetro.appendChild(wrapper);
+            }
+        }
+        inicializarBarrasCelu();
 
-        // Escucha si el admin activa/desactiva el modo peña
-        socket.on('modoBomboServidor', (data) => {
-            if (data && data.estado) {
-                bomboContainer.style.display = 'block';
-            } else {
-                bomboContainer.style.display = 'none';
+        btnUnirse.addEventListener('click', () => {
+            showIniciado = true;
+            btnUnirse.style.display = 'none';
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]); 
+            if (modoBomboActivo) {
+                capaBombo.style.display = 'flex';
+                celuVumetro.style.display = 'none';
             }
         });
 
-        // Escucha cambios globales forzados por el micrófono o consola del admin
         socket.on('cambiarColor', (data) => {
-            if (data && data.color && data.mode !== 'vumetro') {
-                document.body.style.backgroundColor = data.color;
+            if (!showIniciado || modoBomboActivo) return; 
+            if (data) {
+                if (data.mode === 'vumetro' || data.heights) {
+                    contenedorColor.style.backgroundColor = '#000000';
+                    celuVumetro.style.display = 'flex';
+                    dibujarBarrasVumetro(data.heights);
+                } else if (data.color) {
+                    celuVumetro.style.display = 'none';
+                    contenedorColor.style.backgroundColor = data.color;
+                }
             }
         });
 
-        function enviarColor(colorHex) {
-            socket.emit('cambiarColor', { color: colorHex, mode: 'manual' });
+        socket.on('vumetroData', (data) => { 
+            if (!showIniciado || modoBomboActivo || !data) return;
+            contenedorColor.style.backgroundColor = '#000000';
+            celuVumetro.style.display = 'flex';
+            dibujarBarrasVumetro(data.heights || data);
+        });
+
+        function dibujarBarrasVumetro(heights) {
+            if (!heights || !heights.length) return;
+            for (let i = 0; i < totalBarrasCelu; i++) {
+                const vuBar = document.getElementById(`celu-vubar-${i}`);
+                if (vuBar) {
+                    vuBar.style.height = (heights[i] || 0) + '%';
+                }
+            }
         }
 
-        function golpearBombo() {
-            socket.emit('registroGolpeLED');
+        socket.on('modoBomboServidor', (data) => {
+            if (data && data.activado) {
+                modoBomboActivo = true;
+                if (showIniciado) {
+                    celuVumetro.style.display = 'none';
+                    capaBombo.style.display = 'flex';
+                    contenedorColor.style.backgroundColor = '#101014';
+                }
+            } else {
+                modoBomboActivo = false;
+                capaBombo.style.display = 'none';
+                contenedorColor.style.backgroundColor = '#000000';
+                if (showIniciado) celuVumetro.style.display = 'none';
+            }
+        });
+
+        function ejecutarGolpe() {
+            if (!showIniciado) return;
+            // Unificado al evento que maneja tu server nube para contar los golpes
+            socket.emit('golpeBombo');
+            if (navigator.vibrate) navigator.vibrate(40);
+            contenedorColor.style.backgroundColor = '#00ffff';
+            setTimeout(() => { if(modoBomboActivo) contenedorColor.style.backgroundColor = '#101014'; }, 60);
         }
-    </script>
-</body>
-</html>
+        bomboClick.addEventListener('touchstart', (e) => { e.preventDefault(); ejecutarGolpe(); });
+        bomboClick.addEventListener('mousedown', (e) => { e.preventDefault(); ejecutarGolpe(); });
+    </script></body></html>

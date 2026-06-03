@@ -3,136 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SantIA Stagelights - Monitor de Escenario</title>
-    <!-- Librería para inyectar el QR dinámico -->
+    <title>SantIA Show - Overlay Pantalla</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* 🟩 CHROMA GREEN KEY ORIGINAL PARA TRANSMISIÓN / OBS */
-        body {
-            background-color: #00ff00;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            width: 100vw;
+        /* CHROMA KEY GREEN - Para OBS */
+        body, html { 
+            width: 100%; height: 100%; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background-color: #00ff00; 
         }
 
-        /* CONTENEDOR EN CAPA MAESTRA */
-        .overlay-box {
-            background-color: rgba(13, 13, 19, 0.95);
-            border: 4px solid #ffffff;
-            border-radius: 24px;
-            padding: 40px;
-            text-align: center;
-            color: #ffffff;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 25px;
-            width: 90%;
-            max-width: 650px;
-        }
+        #escenario-overlay { position: relative; width: 100%; height: 100%; }
 
-        /* BRANDING LOGO INTEGRADO */
-        .logo-title {
-            background-color: #ffffff;
-            padding: 10px 30px;
-            border-radius: 12px;
-            color: #000000;
-            font-size: 2.2rem;
+        /* QR FIJO: ARRIBA A LA DERECHA */
+        .qr-top-right {
+            position: absolute; top: 25px; right: 25px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 3px solid #ffffff; padding: 15px; border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 100;
+        }
+        .qr-container { background: white; padding: 8px; border-radius: 8px; }
+        .brand-box h2 { font-size: 1.3rem; margin: 0; color: #fff; letter-spacing: 0.5px; text-align: center; }
+        .sant { font-weight: normal; } .ia { font-weight: bold; } .i-red { color: #ff0000; font-style: italic; } .a-blue { color: #0088ff; }
+        .qr-txt { color: #00ff00; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; }
+
+        /* SLIDESHOW DE BIENVENIDA DE ALTO IMPACTO */
+        #slideshow-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; display: block;
+        }
+        .slide {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 1s ease-in-out; padding: 0 8%; text-align: center;
+        }
+        .slide.active { opacity: 1; }
+        .logo-santiago { max-width: 650px; width: 45%; height: auto; margin-bottom: 30px; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.7)); }
+        
+        .slide-text {
+            font-size: 3.5rem; font-weight: 900; color: #ffffff;
+            text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.4), 0 5px 20px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.9);
+            max-width: 1100px; line-height: 1.2;
+            animation: glow-efecto 2s infinite ease-in-out;
         }
-        .logo-title .ia { font-weight: bold; }
-        .logo-title .i-red { color: #ff0000; font-weight: bold; font-style: italic; }
-        .logo-title .a-blue { color: #0000ff; font-weight: bold; }
 
-        /* CONTADOR GIGANTE */
-        .counter-badge {
-            font-family: monospace;
-            font-size: 3.5rem;
-            font-weight: bold;
-            color: #00ff00;
-            background: #000000;
+        .slide-subtext {
+            font-size: 1.8rem; font-weight: 800; color: #00ff00;
+            text-transform: uppercase; margin-top: 25px; letter-spacing: 2px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.9);
+            background: rgba(0, 0, 0, 0.6); padding: 10px 25px; border-radius: 50px;
             border: 2px solid #00ff00;
-            padding: 15px 40px;
-            border-radius: 14px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-            letter-spacing: 2px;
+            box-shadow: 0 5px 20px rgba(0,255,0,0.2);
         }
 
-        /* CUADRO DEL CÓDIGO QR */
-        .qr-wrapper {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 0 30px rgba(255,255,255,0.2);
-            display: inline-block;
+        @keyframes glow-efecto {
+            0%, 100% { text-shadow: 0 0 15px rgba(255,255,255,0.3), 0 5px 20px rgba(0,0,0,0.9); transform: scale(1); }
+            50% { text-shadow: 0 0 30px rgba(255,255,255,0.7), 0 5px 25px rgba(0,0,0,1); transform: scale(1.02); }
         }
 
-        .instruction-text {
-            font-size: 1.3rem;
-            font-weight: 700;
-            line-height: 1.5;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        .footer-brand {
+            position: absolute; bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 105;
         }
+        .footer-txt { color: #ffffff; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,0.9); }
+
+        /* VÚMETRO INFERIOR */
+        #overlay-vumetro {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 25vh; 
+            display: none; align-items: flex-end; justify-content: center; gap: 10px; padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); z-index: 80;
+        }
+        .vubar-wrapper { flex: 1; height: 100%; background-color: rgba(255, 255, 255, 0.1); border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
+        .vubar-item { width: 100%; height: 0%; background: linear-gradient(to top, #00ff00 0%, #ffff00 60%, #ff0000 100%); transition: height 0.04s ease-out; }
+
+        /* MODO PEÑA CON BOMBO ANIMADO */
+        #overlay-peña {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 90;
+        }
+        .peña-container { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .peña-title { font-size: 3rem; font-weight: 900; color: #ffffff; text-shadow: 0 0 20px #b59963, 0 4px 10px rgba(0,0,0,0.9); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        .peña-sub { font-size: 1.4rem; color: #eee; font-weight: 600; text-shadow: 0 2px 5px #000; margin-bottom: 40px; }
+        .bombo-visual-wrapper { position: relative; width: 320px; height: 320px; display: flex; align-items: center; justify-content: center; }
+        .bombo-avatar { width: 260px; height: 260px; background: radial-gradient(circle, #e6c594 0%, #a88444 70%, #4a3319 100%); border: 16px solid #301f0d; border-radius: 50%; box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform 0.05s ease-out, background 0.2s ease, box-shadow 0.2s ease; position: relative; }
+        #peña-counter { font-size: 4rem; font-weight: 900; color: #ffffff; text-shadow: 0 4px 8px #000; font-family: monospace; line-height: 1; }
+        .energia-txt { font-size: 0.9rem; font-weight: bold; color: #00ff00; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px; text-shadow: 0 2px 4px #000; }
+        .bombo-glow-aura { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(255, 165, 0, 0); border: 8px solid rgba(255, 140, 0, 0.5); transform: scale(0.9); opacity: 0; pointer-events: none; }
+        .animar-onda { animation: ondaImpacto 0.4s ease-out; }
+        @keyframes ondaImpacto { 0% { transform: scale(0.9); opacity: 1; border-color: rgba(255, 200, 0, 0.8); } 100% { transform: scale(1.4); opacity: 0; border-color: rgba(255, 0, 0, 0); } }
+        .conectados-badge { margin-top: 30px; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 20px; color: #aaa; font-weight: bold; border: 1px solid #444; font-size: 1rem; }
+        .conectados-badge span { color: #00ff00; }
     </style>
 </head>
 <body>
 
-    <div class="overlay-box">
-        <!-- Logo Oficial Sincronizado -->
-        <div class="logo-title">
-            Sant<span class="ia"><span class="i-red">I</span><span class="a-blue">A</span></span> Stagelights
+    <div id="escenario-overlay">
+        
+        <div class="qr-top-right">
+            <div class="brand-box">
+                <h2><span class="sant">Sant</span><span class="ia"><span class="i-red">I</span><span class="a-blue">A</span></span><span class="stagelights"> Show</span></h2>
+            </div>
+            <div class="qr-container"><div id="qrcode"></div></div>
+            <div class="qr-txt">¡Unite al Show!</div>
         </div>
 
-        <p class="instruction-text">¡Escaneá el código QR con tu celular<br>y sé parte de los efectos en vivo!</p>
-
-        <!-- Generador del QR -->
-        <div class="qr-wrapper">
-            <div id="scannable-qrcode"></div>
+        <div id="slideshow-container">
+            <div class="slide active"></div>
+            
+            <div class="slide">
+                <img src="/assets/logo_evento2.png" class="logo-santiago" alt="Santiago del Estero">
+                <div class="slide-text">¡Conectate y participá de este increíble juego de luces! ✨📱💡</div>
+                <div class="slide-subtext">¡Escaneá el QR para sincronizar tu celular y participar!</div>
+            </div>
+            
+            <div class="slide">
+                <img src="/assets/logo_evento2.png" class="logo-santiago" alt="Santiago del Estero">
+                <div class="slide-text">¡Vibramos al ritmo de nuestra música! 🥁🔥🎶</div>
+                <div class="slide-subtext">¡Escaneá el QR para sincronizar tu celular y participar!</div>
+            </div>
         </div>
 
-        <!-- Indicador de audiencia en tiempo real -->
-        <div class="counter-badge" id="live-display">👥 EN LÍNEA: --</div>
+        <div id="overlay-vumetro"></div>
+
+        <div id="overlay-peña">
+            <div class="peña-container">
+                <div class="peña-title">🥁 ¡PULSACIONES EN VIVO! 🥁</div>
+                <div class="peña-sub">¡Hagan latir el bombo legüero!</div>
+                
+                <div class="bombo-visual-wrapper">
+                    <div id="onda-bombo" class="bombo-glow-aura"></div>
+                    <div id="bombo-avatar-id" class="bombo-avatar">
+                        <div id="peña-counter">0</div>
+                        <div id="energia-label" class="energia-txt">Fuerza: 0%</div>
+                    </div>
+                </div>
+
+                <div class="conectados-badge">
+                    Bombos en Red: <span id="txt-conectados">1</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-brand">
+            <div class="footer-txt">® Tecnoincas2026</div>
+        </div>
+
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Cambiado para conectar de forma segura a Render
         const socket = io(window.location.origin, { transports: ['websocket', 'polling'] });
-        const liveDisplay = document.getElementById('live-display');
+        const overlayVumetro = document.getElementById('overlay-vumetro');
+        const overlayPeña = document.getElementById('overlay-peña');
+        const slideshowContainer = document.getElementById('slideshow-container');
+        const peñaCounter = document.getElementById('peña-counter');
+        const energiaLabel = document.getElementById('energia-label');
+        const bomboAvatar = document.getElementById('bombo-avatar-id');
+        const ondaBombo = document.getElementById('onda-bombo');
+        const txtConectados = document.getElementById('txt-conectados');
+        
+        const totalBars = 16;
+        let conectadosTotales = 1;
+        let energiaActual = 0; 
+        let acumuladorGolpes = 0;
 
-        socket.on('connect', () => {
-            liveDisplay.textContent = "👥 EN LÍNEA: 0";
-        });
+        // LÓGICA DEL SLIDESHOW AUTOMÁTICO
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+        let carruselInterval = null;
 
-        // Escucha el conteo real del servidor
-        socket.on('usuariosConectados', (total) => {
-            // Descontamos 2 (La consola Admin y este monitor) para reflejar solo celulares de la audiencia
-            const publicoNeto = Math.max(0, total - 2);
-            liveDisplay.textContent = `👥 EN LÍNEA: ${publicoNeto}`;
-        });
-
-        // Autogeneración del QR apuntando dinámicamente a la URL base de tu Render
-        try {
-            if (typeof QRCode !== 'undefined') {
-                new QRCode(document.getElementById("scannable-qrcode"), {
-                    text: window.location.origin,
-                    width: 250,
-                    height: 250,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            }
-        } catch (error) {
-            console.error("Error inicializando el QR:", error);
+        function cambiarSlide() {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
         }
+
+        function iniciarCarrusel() {
+            if (!carruselInterval) {
+                slideshowContainer.style.display = 'block';
+                carruselInterval = setInterval(cambiarSlide, 5000);
+            }
+        }
+
+        function detenerCarrusel() {
+            clearInterval(carruselInterval);
+            carruselInterval = null;
+            slideshowContainer.style.display = 'none';
+        }
+
+        iniciarCarrusel();
+
+        function crearBarrasOverlay() {
+            overlayVumetro.innerHTML = '';
+            for (let i = 0; i < totalBars; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'vubar-wrapper';
+                const bar = document.createElement('div');
+                bar.className = 'vubar-item';
+                bar.id = `over-vubar-${i}`;
+                wrapper.appendChild(bar);
+                overlayVumetro.appendChild(wrapper);
+            }
+        }
+        crearBarrasOverlay();
+
+        socket.on('usuariosConectados', (count) => {
+            if (count && count > 0) {
+                conectadosTotales = count;
+                txtConectados.textContent = conectadosTotales;
+            }
+        });
+
+        socket.on('cambiarColor', (data) => {
+            if (data && (data.mode === 'vumetro' || data.heights)) {
+                detenerCarrusel();
+                overlayVumetro.style.display = 'flex';
+                renderizarBarras(data.heights);
+            } else {
+                overlayVumetro.style.display = 'none';
+                if (overlayPeña.style.display !== 'flex') iniciarCarrusel();
+            }
+        });
+
+        function renderizarBarras(heights) {
+            if (!heights) return;
+            for (let i = 0; i < totalBars; i++) {
+                const bar = document.getElementById(`over-vubar-${i}`);
+                if (bar) bar.style.height = (heights[i] || 0) + '%';
+            }
+        }
+
+        socket.on('modoBomboServidor', (data) => {
+            if (data && data.activado) {
+                detenerCarrusel();
+                overlayVumetro.style.display = 'none';
+                overlayPeña.style.display = 'flex';
+                acumuladorGolpes = 0;
+                energiaActual = 0;
+                actualizarGraficosBombo();
+            } else {
+                overlayPeña.style.display = 'none';
+                iniciarCarrusel();
+            }
+        });
+
+        // Sincronizado exactamente con el evento de golpe unificado del backend
+        socket.on('registroGolpeLED', () => {
+            acumuladorGolpes++;
+            let factorDificultad = Math.max(5, conectadosTotales * 0.6); 
+            let incremento = 100 / factorDificultad;
+            
+            energiaActual = Math.min(energiaActual + incremento, 100);
+            bomboAvatar.style.transform = 'scale(1.12) rotate(' + (Math.random() * 6 - 3) + 'deg)';
+            
+            ondaBombo.classList.remove('animar-onda');
+            void ondaBombo.offsetWidth; 
+            ondaBombo.classList.add('animar-onda');
+
+            setTimeout(() => { bomboAvatar.style.transform = 'scale(1) rotate(0deg)'; }, 50);
+            actualizarGraficosBombo();
+        });
+
+        function actualizarGraficosBombo() {
+            peñaCounter.textContent = acumuladorGolpes;
+            energiaLabel.textContent = `Fuerza: ${Math.round(energiaActual)}%`;
+
+            if (energiaActual > 75) {
+                bomboAvatar.style.background = 'radial-gradient(circle, #ff3300 0%, #ffaa00 60%, #4a0000 100%)';
+                bomboAvatar.style.boxShadow = '0 0 50px #ff3300, inset 0 0 30px rgba(0,0,0,0.8)';
+                energiaLabel.style.color = '#ff3300';
+            } else if (energiaActual > 40) {
+                bomboAvatar.style.background = 'radial-gradient(circle, #ffff00 0%, #a88444 70%, #2b1a08 100%)';
+                bomboAvatar.style.boxShadow = '0 0 30px #ffff00, inset 0 0 30px rgba(0,0,0,0.6)';
+                energiaLabel.style.color = '#ffff00';
+            } else {
+                bomboAvatar.style.background = 'radial-gradient(circle, #e6c594 0%, #a88444 70%, #4a3319 100%)';
+                bomboAvatar.style.boxShadow = '0 15px 35px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.6)';
+                energiaLabel.style.color = '#00ff00';
+            }
+        }
+
+        setInterval(() => {
+            if (energiaActual > 0) {
+                energiaActual = Math.max(energiaActual - 2.5, 0);
+                actualizarGraficosBombo();
+            }
+        }, 150);
+
+        try {
+            new QRCode(document.getElementById("qrcode"), {
+                text: window.location.origin, width: 130, height: 130, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M
+            });
+        } catch(e) { console.error(e); }
     </script>
 </body>
 </html>
